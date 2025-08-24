@@ -615,7 +615,6 @@ async def main():
     bot.loop.create_task(start_fastapi())
     bot.loop.create_task(file_queue_worker(bot))  # Start the queue worker
     bot.loop.create_task(periodic_expiry_cleanup())
-    start_query_id_cleanup_thread()
 
     # Send startup message to log channel
     try:
