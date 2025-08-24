@@ -609,6 +609,7 @@ async def inline_query_handler(client, inline_query):
     for f in files:
         file_name = f.get("file_name", "File")
         file_size = human_readable_size(f.get("file_size", 0))
+        file_type = f.get("file_format", "Document")
         channel_id = f["channel_id"]
         message_id = f["message_id"]
         file_link = encode_file_link(channel_id, message_id)
@@ -617,7 +618,7 @@ async def inline_query_handler(client, inline_query):
             InlineQueryResultDocument(
                 title=f"{file_name} ({file_size})",
                 document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}",
-                mime_type="application/octet-stream",
+                mime_type=file_type,
                 caption=f"{file_name}\nSize: {file_size}\n\nTo get this file, click the link above.",
                 description=f"From channel {channel_id}",
                 input_message_content=InputTextMessageContent(
