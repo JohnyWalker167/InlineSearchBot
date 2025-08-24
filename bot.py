@@ -499,12 +499,8 @@ async def inline_query_handler(client, inline_query):
     if not query:
         await inline_query.answer([], cache_time=1)
         return
-    
-    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
-        reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
-        bot.loop.create_task(delete_after_delay(reply))
-        return
-        
+
+
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -535,7 +531,12 @@ async def inline_query_handler(client, inline_query):
             )
             bot.loop.create_task(delete_after_delay(reply))
             return
-                
+        
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
+            reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
+            bot.loop.create_task(delete_after_delay(reply))
+            return
+
         for f in files:
             file_name = f.get("file_name", "File")
             file_size = human_readable_size(f.get("file_size", 0))
@@ -569,6 +570,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(no_results, cache_time=1)
         return    
     await inline_query.answer(results, cache_time=300)
+    return
 
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
