@@ -14,7 +14,7 @@ from pyrogram import Client, enums, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import ListenerTimeout
 import uvicorn
-from pyrogram.types import InlineQueryResultCachedDocument
+from pyrogram.types import InlineQueryResultCachedDocument, InlineQueryResultArticle, InputTextMessageContent
 
 from config import *
 from utility import (
@@ -507,7 +507,7 @@ async def inline_query_handler(client, inline_query):
     result = list(files_col.aggregate(pipeline))
     files = result[0]["results"] if result and result[0]["results"] else []
 
-    if result:
+    if files:
         if not is_user_authorized(user_id):
             now = datetime.now(timezone.utc)
             token_doc = tokens_col.find_one({
@@ -557,9 +557,17 @@ async def inline_query_handler(client, inline_query):
             )
 
     if not results:
-        await inline_query.answer([], cache_time=1)
-        return
-    
+        no_results = [
+            InlineQueryResultArticle(
+                title="❌ No Results Found",
+                description=f'Nothing found for "{query}". Try another search.',
+                input_message_content=InputTextMessageContent(
+                    message_text=f'❌ No results found for "{query}".'
+                )
+            )
+        ]
+        await inline_query.answer(no_results, cache_time=1)
+        return    
     await inline_query.answer(results, cache_time=300)
 
 @bot.on_message(filters.via_bot)
