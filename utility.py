@@ -106,7 +106,7 @@ def build_search_pipeline(query, allowed_ids, skip, limit):
             "file_name": 1,
             "file_size": 1,
             "file_format": 1,
-            "message_id": 1,
+            "file_id": 1,
             "channel_id": 1,
             "score": {"$meta": "searchScore"}
         }
@@ -280,7 +280,7 @@ def shorten_url(long_url):
 def upsert_file_info(file_info):
     """Insert or update file info, avoiding duplicates."""
     files_col.update_one(
-        {"channel_id": file_info["channel_id"], "message_id": file_info["message_id"]},
+        {"channel_id": file_info["channel_id"], "file_id": file_info["file_id"]},
         {"$set": file_info},
         upsert=True
     )
@@ -451,7 +451,7 @@ async def file_queue_worker(bot):
             })
             
             if existing and duplicate:
-                telegram_link = generate_c_link(file_info["channel_id"], file_info["message_id"])
+                telegram_link = generate_c_link(file_info["channel_id"], file_info["file_id"])
                 if reply_func:
                     if duplicate:
                         await safe_api_call(
