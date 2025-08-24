@@ -574,6 +574,16 @@ async def inline_query_handler(client, inline_query):
 async def private_file_handler(client, message: Message):
         await delete_after_delay(message)
 
+@bot.on_chosen_inline_result()
+async def chosen_result_handler(client, chosen_result):
+    user_id = chosen_result.from_user.id
+    user_link = await get_user_link(chosen_result.from_user)
+
+    # Increment counter only when a result is chosen
+    user_file_count[user_id] = user_file_count.get(user_id, 0) + 1
+
+    logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
+
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
 async def chatop_handler(client, message: Message):
     """
