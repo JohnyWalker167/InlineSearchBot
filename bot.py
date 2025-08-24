@@ -502,7 +502,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer([], cache_time=1)
         return
 
-    if user_id != OWNER_ID and not is_user_authorized(user_id):
+    if not is_user_authorized(user_id):
         now = datetime.now(timezone.utc)
         token_doc = tokens_col.find_one({
             "user_id": user_id,
@@ -525,7 +525,7 @@ async def inline_query_handler(client, inline_query):
         bot.loop.create_task(delete_after_delay(reply))
         return
     
-    if user_id != OWNER_ID and user_file_count[user_id] >= MAX_FILES_PER_SESSION:
+    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
         reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
         bot.loop.create_task(delete_after_delay(reply))
         return
@@ -564,6 +564,10 @@ async def inline_query_handler(client, inline_query):
         return
 
     await inline_query.answer(results, cache_time=300)
+
+@bot.on_message(filters.via_bot)
+async def private_file_handler(client, message: Message):
+        await delete_after_delay(message)
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
 async def chatop_handler(client, message: Message):
