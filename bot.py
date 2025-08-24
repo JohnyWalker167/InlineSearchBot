@@ -545,55 +545,6 @@ async def tmdb_command(client, message):
         await safe_api_call(message.reply_text(f"Error in tmdb command: {e}"))
     await message.delete()
 
-# Handles incoming text messages in private chat that aren't commands
-@bot.on_message(filters.chat(GROUP_ID) & filters.text & ~filters.command([
-    "start", "stats", "add", "rm", "broadcast", "log", "tmdb", 
-    "restore", "index", "del", "restart", "chatop"]))
-async def instant_search_handler(client, message):
-    reply = None
-    user_link = await get_user_link(message.from_user)
-    user_id = get_safe_user_id(message.from_user)
-    try: 
-        query = sanitize_query(message.text)
-        query_id = store_query(query)
-        if not query:
-            return
-
-        channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
-        if not channels:
-            reply = await safe_api_call(message.reply_text(f"No allowed channels available for search."))
-            return
-
-        # Show channel selection buttons
-        text = (f"<b>👤 User:</b> {user_link}\n"
-                f"<b>✅ Select a Category</b>"
-                )
-        buttons = []
-        for c in channels:
-            chan_id = c["channel_id"]
-            chan_name = c.get("channel_name", str(chan_id))
-            data = f"search_channel:{query_id}:{chan_id}:1:{user_id}"
-            buttons.append([
-                InlineKeyboardButton(
-                    chan_name,
-                    callback_data=data
-                )
-            ])
-        reply_markup = InlineKeyboardMarkup(buttons)
-        reply = await safe_api_call(
-            message.reply_text(
-                text,
-                reply_markup=reply_markup,
-                parse_mode=enums.ParseMode.HTML
-            )
-        )
-    except Exception as e:
-        logger.error(f"Error in instant_search_handler: {e}")
-        reply = await message.reply_text(f"Invalid search query, {user_link}. Please try again with a different query.")
-    if reply:
-        bot.loop.create_task(auto_delete_message(message, reply))
-
-
 @bot.on_inline_query()
 async def inline_query_handler(client, inline_query):
     query = sanitize_query(inline_query.query)
@@ -617,12 +568,12 @@ async def inline_query_handler(client, inline_query):
         channel_id = f["channel_id"]
         message_id = f["message_id"]
         file_link = encode_file_link(channel_id, message_id)
-        # Use a valid mime_type for inline documents
+        # Pass query in deep link for later use
         results.append(
             InlineQueryResultDocument(
                 title=f"{file_name} ({file_size})",
                 document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}_q_{quote_plus(query)}",
-                mime_type="application/pdf",  # Always use a supported type!
+                mime_type="application/pdf",
                 caption=f"{file_name}\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click the link above.",
                 description=f"From channel {channel_id} ({file_type})",
                 input_message_content=InputTextMessageContent(
