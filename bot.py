@@ -25,7 +25,7 @@ from utility import (
     queue_file_for_processing, file_queue_worker,
     file_queue, extract_tmdb_link, periodic_expiry_cleanup,
     restore_tmdb_photos, build_search_pipeline,
-    get_user_link, delete_after_delay, get_safe_user_id)
+    get_user_link, delete_after_delay)
 from db import (db, users_col, 
                 tokens_col, 
                 files_col, 
@@ -38,14 +38,12 @@ from fast_api import api
 from tmdb import get_by_id
 import logging
 import base64
-from urllib.parse import quote_plus, unquote_plus
-from query_helper import store_query, start_query_id_cleanup_thread
 # =========================
 # Constants & Globals
 # ========================= 
 
 TOKEN_VALIDITY_SECONDS = 24 * 60 * 60  # 24 hours token validity
-MAX_FILES_PER_SESSION = 10             # Max files a user can access per session
+MAX_FILES_PER_SESSION = 5            # Max files a user can access per session
 PAGE_SIZE = 10  # Number of files per page
 SEARCH_PAGE_SIZE = 10  # You can adjust this
 
@@ -501,35 +499,7 @@ async def inline_query_handler(client, inline_query):
     if not query:
         await inline_query.answer([], cache_time=1)
         return
-
-    if not is_user_authorized(user_id):
-        now = datetime.now(timezone.utc)
-        token_doc = tokens_col.find_one({
-            "user_id": user_id,
-            "expiry": {"$gt": now}
-        })
-        token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
-        short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
-        reply = await bot.send_message(
-            chat_id=user_id,
-            text=(
-                "🎉 Just one step away!\n\n"
-                "To access files, please contribute a little by clicking the link below. "
-                "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
-                "Click below to get 24-hour access:"
-            ),
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("🔓 Get Access Link", url=short_link)]]
-            )
-        )
-        bot.loop.create_task(delete_after_delay(reply))
-        return
-    
-    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
-        reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
-        bot.loop.create_task(delete_after_delay(reply))
-        return
-    
+        
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -537,17 +507,44 @@ async def inline_query_handler(client, inline_query):
     result = list(files_col.aggregate(pipeline))
     files = result[0]["results"] if result and result[0]["results"] else []
 
-    for f in files:
-        file_name = f.get("file_name", "File")
-        file_size = human_readable_size(f.get("file_size", 0))
-        file_type = f.get("file_format", "Document")
-        file_id = f.get("file_id")  # You must store this when indexing!
-        # Button with search query
-        buttons = []
-        if query:
+    if result:
+        if not is_user_authorized(user_id):
+            now = datetime.now(timezone.utc)
+            token_doc = tokens_col.find_one({
+                "user_id": user_id,
+                "expiry": {"$gt": now}
+            })
+            token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
+            short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
+            reply = await bot.send_message(
+                chat_id=user_id,
+                text=(
+                    "🎉 Just one step away!\n\n"
+                    "To access files, please contribute a little by clicking the link below. "
+                    "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
+                    "Click below to get 24-hour access:"
+                ),
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("🔓 Get Access Link", url=short_link)]]
+                )
+            )
+            bot.loop.create_task(delete_after_delay(reply))
+            return
+        
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
+            reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
+            bot.loop.create_task(delete_after_delay(reply))
+            return
+        
+        for f in files:
+            file_name = f.get("file_name", "File")
+            file_size = human_readable_size(f.get("file_size", 0))
+            file_type = f.get("file_format", "Document")
+            file_id = f.get("file_id")  # You must store this when indexing!
+            # Button with search query
+            buttons = []
             buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
 
-        if file_id:
             results.append(
                 InlineQueryResultCachedDocument(
                     title=f"{file_name} ({file_size})",
@@ -562,7 +559,7 @@ async def inline_query_handler(client, inline_query):
     if not results:
         await inline_query.answer([], cache_time=1)
         return
-
+    
     await inline_query.answer(results, cache_time=300)
 
 @bot.on_message(filters.via_bot)
