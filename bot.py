@@ -14,7 +14,7 @@ from pyrogram import Client, enums, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import ListenerTimeout
 import uvicorn
-from pyrogram.types import InlineQueryResultDocument, InputTextMessageContent
+from pyrogram.types import InlineQueryResultCachedDocument
 
 from config import *
 from utility import (
@@ -565,37 +565,28 @@ async def inline_query_handler(client, inline_query):
         file_name = f.get("file_name", "File")
         file_size = human_readable_size(f.get("file_size", 0))
         file_type = f.get("file_format", "Document")
-        channel_id = f["channel_id"]
-        message_id = f["message_id"]
-        file_link = encode_file_link(channel_id, message_id)
-        # Pass query in deep link for later use
-        results.append(
-            InlineQueryResultDocument(
-                title=f"{file_name} ({file_size})",
-                document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}_q_{quote_plus(query)}",
-                mime_type="application/pdf",
-                caption=f"{file_name}\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click the link above.",
-                description=f"From channel {channel_id} ({file_type})",
-                input_message_content=InputTextMessageContent(
-                    f"/start file_{file_link}_q_{quote_plus(query)}",
-                    parse_mode=enums.ParseMode.HTML
+        file_id = f.get("file_id")  # You must store this when indexing!
+        thumb_url = f.get("thumb_url")
+        # Button with search query
+        buttons = []
+        if query:
+            buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
+
+        if file_id:
+            results.append(
+                InlineQueryResultCachedDocument(
+                    title=f"{file_name} ({file_size})",
+                    document_file_id=file_id,
+                    description=f"From channel {f['channel_id']} ({file_type})",
+                    caption=f"{file_name}\nSize: {file_size}\nType: {file_type}",
+                    parse_mode=enums.ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                 )
             )
-        )
 
     if not results:
-        results.append(
-            InlineQueryResultDocument(
-                title="No results found",
-                document_url="https://t.me/",
-                mime_type="application/pdf",
-                caption="❌ No files found for your query.",
-                description="No files found.",
-                input_message_content=InputTextMessageContent(
-                    "❌ No files found for your query."
-                )
-            )
-        )
+        await inline_query.answer([], cache_time=1)
+        return
 
     await inline_query.answer(results, cache_time=1)
 

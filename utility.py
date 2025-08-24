@@ -332,28 +332,32 @@ async def restore_tmdb_photos(bot, start_id=None):
             continue  # Continue to the next doc
 
 def extract_file_info(message, channel_id=None):
-    """Extract file info from a Pyrogram message."""
+    """Extract file info from a Pyrogram message, storing file_id instead of message_id."""
     caption_name = message.caption.strip() if message.caption else None
     file_info = {
         "channel_id": channel_id if channel_id is not None else message.chat.id,
-        "message_id": message.id,
+        "file_id": None,
         "file_name": None,
         "file_size": None,
         "file_format": None,
     }
     if message.document:
+        file_info["file_id"] = message.document.file_id
         file_info["file_name"] = caption_name or message.document.file_name
         file_info["file_size"] = message.document.file_size
         file_info["file_format"] = message.document.mime_type
     elif message.video:
+        file_info["file_id"] = message.video.file_id
         file_info["file_name"] = caption_name or (message.video.file_name or "video.mp4")
         file_info["file_size"] = message.video.file_size
         file_info["file_format"] = message.video.mime_type
     elif message.audio:
+        file_info["file_id"] = message.audio.file_id
         file_info["file_name"] = caption_name or (message.audio.file_name or "audio.mp3")
         file_info["file_size"] = message.audio.file_size
         file_info["file_format"] = message.audio.mime_type
     elif message.photo:
+        file_info["file_id"] = message.photo.file_id
         file_info["file_name"] = caption_name or "photo.jpg"
         file_info["file_size"] = getattr(message.photo, "file_size", None)
         file_info["file_format"] = "image/jpeg"
