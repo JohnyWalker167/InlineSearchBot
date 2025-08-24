@@ -577,7 +577,7 @@ async def inline_query_handler(client, inline_query):
                 caption=f"{file_name}\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click the link above.",
                 description=f"From channel {channel_id} ({file_type})",
                 input_message_content=InputTextMessageContent(
-                    f"🔗 <b>{file_name}</b>\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click: /start file_{file_link}_q_{quote_plus(query)}",
+                    f"/start file_{file_link}_q_{quote_plus(query)}",
                     parse_mode=enums.ParseMode.HTML
                 )
             )
