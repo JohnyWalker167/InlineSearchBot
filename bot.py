@@ -580,7 +580,7 @@ async def chosen_result_handler(client, chosen_result):
     user_link = await get_user_link(chosen_result.from_user)
 
     # Increment counter only when a result is chosen
-    user_file_count[user_id] = user_file_count.get(user_id, 0) + 1
+    user_file_count[user_id] += 1
 
     logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
 
