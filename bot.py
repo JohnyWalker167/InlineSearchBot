@@ -579,10 +579,23 @@ async def chosen_result_handler(client, chosen_result):
     user_id = chosen_result.from_user.id
     user_link = await get_user_link(chosen_result.from_user)
 
-    # Increment counter only when a result is chosen
-    user_file_count[user_id] += 1
+    # Check limit again when the user actually selects a file
+    if user_file_count.get(user_id, 0) >= MAX_FILES_PER_SESSION:
+        try:
+            await bot.send_message(
+                user_id,
+                f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. "
+                f"Take a short break and try again later."
+            )
+        except Exception:
+            pass
+        return
+
+    # Increment counter only when within limit
+    user_file_count[user_id] = user_file_count.get(user_id, 0) + 1
 
     logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
+
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
 async def chatop_handler(client, message: Message):
