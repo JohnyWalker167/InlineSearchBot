@@ -37,10 +37,9 @@ from db import (db, users_col,
 from fast_api import api
 from tmdb import get_by_id
 import logging
-from pyrogram.types import CallbackQuery
 import base64
 from urllib.parse import quote_plus, unquote_plus
-from query_helper import store_query, get_query_by_id, start_query_id_cleanup_thread
+from query_helper import store_query, start_query_id_cleanup_thread
 # =========================
 # Constants & Globals
 # ========================= 
@@ -139,6 +138,11 @@ async def start_handler(client, message):
                 # Decode file link and send file
                 try: 
                     b64 = message.command[1][5:]
+                    # Support file_{file_link}_q_{query}
+                    parts = b64.split("_q_")
+                    b64 = parts[0]
+                    query = unquote_plus(parts[1]) if len(parts) > 1 else None
+
                     padding = '=' * (-len(b64) % 4)
                     decoded = base64.urlsafe_b64decode(b64 + padding).decode()
                     channel_id_str, msg_id_str = decoded.split("_")
@@ -148,10 +152,15 @@ async def start_handler(client, message):
                     if not file_doc:
                         reply_msg = await safe_api_call(message.reply_text("File not found."))
                     else:
+                        # Add button with search query if available
+                        buttons = []
+                        if query:
+                            buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
                         reply_msg = await safe_api_call(client.copy_message(
                             chat_id=message.chat.id,
                             from_chat_id=file_doc["channel_id"],
-                            message_id=file_doc["message_id"]
+                            message_id=file_doc["message_id"],
+                            reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                         ))
                         user_file_count[user_id] += 1
                 except Exception as e:
@@ -612,12 +621,12 @@ async def inline_query_handler(client, inline_query):
         results.append(
             InlineQueryResultDocument(
                 title=f"{file_name} ({file_size})",
-                document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}",
+                document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}_q_{quote_plus(query)}",
                 mime_type="application/pdf",  # Always use a supported type!
                 caption=f"{file_name}\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click the link above.",
                 description=f"From channel {channel_id} ({file_type})",
                 input_message_content=InputTextMessageContent(
-                    f"🔗 <b>{file_name}</b>\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click: /start file_{file_link}",
+                    f"🔗 <b>{file_name}</b>\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click: /start file_{file_link}_q_{quote_plus(query)}",
                     parse_mode=enums.ParseMode.HTML
                 )
             )
