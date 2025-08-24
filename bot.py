@@ -556,8 +556,10 @@ async def inline_query_handler(client, inline_query):
                     reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                 )
             )
+            await inline_query.answer(results, cache_time=300)
+            return
 
-    if not results:
+    if not files:
         no_results = [
             InlineQueryResultArticle(
                 title="❌ No Results Found",
@@ -569,8 +571,6 @@ async def inline_query_handler(client, inline_query):
         ]
         await inline_query.answer(no_results, cache_time=1)
         return    
-    await inline_query.answer(results, cache_time=300)
-    return
 
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
