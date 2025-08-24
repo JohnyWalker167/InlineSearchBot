@@ -103,8 +103,6 @@ async def start_handler(client, message):
         user_id = message.from_user.id
         user_link = await get_user_link(message.from_user) 
         add_user(user_id)
-        bot_username = BOT_USERNAME
-
         # --- Token-based authorization ---
         if len(message.command) == 2 and message.command[1].startswith("token_"):
             if is_token_valid(message.command[1][6:], user_id):
@@ -114,62 +112,11 @@ async def start_handler(client, message):
             else:
                 reply_msg = await safe_api_call(message.reply_text("❌ Invalid or expired token. Please get a new link."))
 
-        # --- File access via deep link ---
-        elif len(message.command) == 2 and message.command[1].startswith("file_"):
-            # Check if user is authorized, but skip for OWNER_ID
-            if user_id != OWNER_ID and not is_user_authorized(user_id):
-                now = datetime.now(timezone.utc)
-                token_doc = tokens_col.find_one({
-                    "user_id": user_id,
-                    "expiry": {"$gt": now}
-                })
-                token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
-                short_link = shorten_url(get_token_link(token_id, bot_username))
-                reply_msg = await safe_api_call(message.reply_text(
-                    "❌ You are not authorized\n"
-                    "Please use this link to get access for 24 hours:",
-                    reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("Get Access Link", url=short_link)]]
-                    )
-                ))
-            elif user_id != OWNER_ID and user_file_count[user_id] >= MAX_FILES_PER_SESSION:
-                reply_msg = await safe_api_call(message.reply_text("❌ You have reached the maximum of 10 files per session."))
-            else:
-                # Decode file link and send file
-                try: 
-                    b64 = message.command[1][5:]
-                    # Support file_{file_link}_q_{query}
-                    parts = b64.split("_q_")
-                    b64 = parts[0]
-                    query = unquote_plus(parts[1]) if len(parts) > 1 else None
-
-                    padding = '=' * (-len(b64) % 4)
-                    decoded = base64.urlsafe_b64decode(b64 + padding).decode()
-                    channel_id_str, msg_id_str = decoded.split("_")
-                    channel_id = int(channel_id_str)
-                    msg_id = int(msg_id_str)
-                    file_doc = files_col.find_one({"channel_id": channel_id, "message_id": msg_id})
-                    if not file_doc:
-                        reply_msg = await safe_api_call(message.reply_text("File not found."))
-                    else:
-                        # Add button with search query if available
-                        buttons = []
-                        if query:
-                            buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
-                        reply_msg = await safe_api_call(client.copy_message(
-                            chat_id=message.chat.id,
-                            from_chat_id=file_doc["channel_id"],
-                            message_id=file_doc["message_id"],
-                            reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
-                        ))
-                        user_file_count[user_id] += 1
-                except Exception as e:
-                    reply_msg = await safe_api_call(message.reply_text(f"Failed to send file: {e}"))
         # --- Default greeting ---
         else:
             welcome_text = (
                             f"👋 <b>Welcome, {user_link}!</b>\n\n"
-                            f"I'm a Auto Filter Bot 🤖 used to manage request in a group."
+                            f"I'm a Auto Filter Bot 🤖."
                             )
             reply_msg = await safe_api_call(
                 message.reply_text(welcome_text,
@@ -548,12 +495,41 @@ async def tmdb_command(client, message):
 @bot.on_inline_query()
 async def inline_query_handler(client, inline_query):
     query = sanitize_query(inline_query.query)
+    user_id = inline_query.from_user.id
     results = []
 
     if not query:
         await inline_query.answer([], cache_time=1)
         return
 
+    if user_id != OWNER_ID and not is_user_authorized(user_id):
+        now = datetime.now(timezone.utc)
+        token_doc = tokens_col.find_one({
+            "user_id": user_id,
+            "expiry": {"$gt": now}
+        })
+        token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
+        short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
+        reply = await bot.send_message(
+            chat_id=user_id,
+            text=(
+                "🎉 Just one step away!\n\n"
+                "To access files, please contribute a little by clicking the link below. "
+                "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
+                "Click below to get 24-hour access:"
+            ),
+            reply_markup=InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🔓 Get Access Link", url=short_link)]]
+            )
+        )
+        bot.loop.create_task(delete_after_delay(reply))
+        return
+    
+    if user_id != OWNER_ID and user_file_count[user_id] >= MAX_FILES_PER_SESSION:
+        reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
+        bot.loop.create_task(delete_after_delay(reply))
+        return
+    
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -566,7 +542,6 @@ async def inline_query_handler(client, inline_query):
         file_size = human_readable_size(f.get("file_size", 0))
         file_type = f.get("file_format", "Document")
         file_id = f.get("file_id")  # You must store this when indexing!
-        thumb_url = f.get("thumb_url")
         # Button with search query
         buttons = []
         if query:
@@ -588,7 +563,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer([], cache_time=1)
         return
 
-    await inline_query.answer(results, cache_time=1)
+    await inline_query.answer(results, cache_time=300)
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
 async def chatop_handler(client, message: Message):
