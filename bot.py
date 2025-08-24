@@ -587,10 +587,6 @@ async def instant_search_handler(client, message):
 
 @bot.on_inline_query()
 async def inline_query_handler(client, inline_query):
-    """
-    Handles inline search queries.
-    Users can type: @YourBot query
-    """
     query = sanitize_query(inline_query.query)
     results = []
 
@@ -598,7 +594,6 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer([], cache_time=1)
         return
 
-    # Search all allowed channels
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -613,16 +608,16 @@ async def inline_query_handler(client, inline_query):
         channel_id = f["channel_id"]
         message_id = f["message_id"]
         file_link = encode_file_link(channel_id, message_id)
-        # InlineQueryResultDocument: deep link to /start file_{file_link}
+        # Use a valid mime_type for inline documents
         results.append(
             InlineQueryResultDocument(
                 title=f"{file_name} ({file_size})",
                 document_url=f"https://t.me/{BOT_USERNAME}?start=file_{file_link}",
-                mime_type=file_type,
-                caption=f"{file_name}\nSize: {file_size}\n\nTo get this file, click the link above.",
-                description=f"From channel {channel_id}",
+                mime_type="application/pdf",  # Always use a supported type!
+                caption=f"{file_name}\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click the link above.",
+                description=f"From channel {channel_id} ({file_type})",
                 input_message_content=InputTextMessageContent(
-                    f"🔗 <b>{file_name}</b>\nSize: {file_size}\n\nTo get this file, click: /start file_{file_link}",
+                    f"🔗 <b>{file_name}</b>\nSize: {file_size}\nType: {file_type}\n\nTo get this file, click: /start file_{file_link}",
                     parse_mode=enums.ParseMode.HTML
                 )
             )
