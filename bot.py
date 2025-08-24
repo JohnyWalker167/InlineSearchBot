@@ -556,8 +556,8 @@ async def inline_query_handler(client, inline_query):
                     reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                 )
             )
-            await inline_query.answer(results, cache_time=300)
-            return
+        await inline_query.answer(results, cache_time=300)
+        return
 
     if not files:
         no_results = [
