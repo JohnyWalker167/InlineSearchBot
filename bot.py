@@ -572,8 +572,8 @@ async def inline_query_handler(client, inline_query):
 
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
-        await delete_after_delay(message)
-
+        bot.loop.create_task(delete_after_delay(message))
+        
 @bot.on_chosen_inline_result()
 async def chosen_result_handler(client, chosen_result):
     user_id = chosen_result.from_user.id
