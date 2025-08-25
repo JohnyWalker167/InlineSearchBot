@@ -496,15 +496,18 @@ async def inline_query_handler(client, inline_query):
     user_id = inline_query.from_user.id
     results = []
 
+    # Show a friendly prompt if no query is entered
     if not query:
-        await inline_query.answer([], cache_time=1)
+        prompt_article = InlineQueryResultArticle(
+            title="🔎 Start typing to search files...",
+            description="Enter keywords to search available files.",
+            input_message_content=InputTextMessageContent(
+                message_text="ℹ️ Please enter a search query above to find files."
+            )
+        )
+        await inline_query.answer([prompt_article], cache_time=1)
         return
-    
-    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
-        reply = await bot.send_message(user_id, f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Take a short break and try again later.")
-        bot.loop.create_task(delete_after_delay(reply))
-        return
-        
+            
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -521,19 +524,37 @@ async def inline_query_handler(client, inline_query):
             })
             token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
             short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
-            reply = await bot.send_message(
-                chat_id=user_id,
-                text=(
+            # Inline result for authorization using url field
+            auth_article = InlineQueryResultArticle(
+                title="🔓 Just one step away!",
+                description="Tap to get your 24-hour access link.",
+                input_message_content=InputTextMessageContent(
                     "🎉 Just one step away!\n\n"
-                    "To access files, please contribute a little by clicking the link below. "
+                    "To access files, please contribute a little by clicking the button below. "
                     "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
                     "Click below to get 24-hour access:"
                 ),
+                url=short_link,
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("🔓 Get Access Link", url=short_link)]]
+                    [
+                        [InlineKeyboardButton("🔓 Get Access Link", url=short_link)]
+                    ]
                 )
             )
-            bot.loop.create_task(delete_after_delay(reply))
+            await inline_query.answer([auth_article], cache_time=1)
+            return
+        
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
+            max_results = [
+                InlineQueryResultArticle(
+                    title="⚠️ Limit Reached",
+                    description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Please take a short break and try again later."
+                    )
+                )
+            ]
+            await inline_query.answer(max_results, cache_time=1)
             return
                 
         for f in files:
@@ -547,10 +568,10 @@ async def inline_query_handler(client, inline_query):
 
             results.append(
                 InlineQueryResultCachedDocument(
-                    title=f"{file_name} ({file_size})",
+                    title=f"{file_name}",
                     document_file_id=file_id,
-                    description=f"From channel {f['channel_id']} ({file_type})",
-                    caption=f"{file_name}\nSize: {file_size}\nType: {file_type}",
+                    description=f"Size: {file_size})",
+                    caption=f"{file_name}",
                     parse_mode=enums.ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                 )
