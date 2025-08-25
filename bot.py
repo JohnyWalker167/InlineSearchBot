@@ -497,15 +497,8 @@ async def inline_query_handler(client, inline_query):
     results = []
 
     if not query:
-        prompt_article = InlineQueryResultArticle(
-            title="🔎 Start typing to search files...",
-            description="Enter keywords to search available files.",
-            input_message_content=InputTextMessageContent(
-                "ℹ️ Please enter a search query above to find files."
-            )
-        )
         await inline_query.answer(
-            results=[prompt_article],
+            results=[],
             cache_time=1,
             switch_pm_text="Open bot for more options",
             switch_pm_parameter="start"
@@ -548,23 +541,18 @@ async def inline_query_handler(client, inline_query):
             await inline_query.answer([auth_article], cache_time=1)
             return
         
-        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
-            max_results = [
-                InlineQueryResultArticle(
-                    title="⚠️ Limit Reached",
-                    description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
-                    input_message_content=InputTextMessageContent(
-                        message_text=f"/start"
-                    )
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
+            await inline_query.answer(
+                results=[],
+                cache_time=1,
+                switch_pm_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
+                switch_pm_parameter="okay"
                 )
-            ]
-            await inline_query.answer(max_results, cache_time=1)
             return
                 
         for f in files:
             file_name = f.get("file_name", "File")
             file_size = human_readable_size(f.get("file_size", 0))
-            file_type = f.get("file_format", "Document")
             file_id = f.get("file_id")  # You must store this when indexing!
             # Button with search query
             buttons = []
