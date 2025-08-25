@@ -547,7 +547,7 @@ async def inline_query_handler(client, inline_query):
                     ]
                 )
             )
-            await inline_query.answer([auth_article], cache_time=1)
+            await inline_query.answer([auth_article], cache_time=0)
             return
                         
         for f in files:
@@ -569,21 +569,17 @@ async def inline_query_handler(client, inline_query):
                 )
             )
 
-        await inline_query.answer(results, cache_time=1)
+        await inline_query.answer(results, cache_time=300)
         return
 
     if not results:
-        no_results = [
-            InlineQueryResultArticle(
-                title="❌ No Results Found",
-                description=f'Nothing found for "{query}". Try another search.',
-                input_message_content=InputTextMessageContent(
-                    message_text=f'❌ No results found for "{query}".'
-                )
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text=f"❌ No Results Found",
+            switch_pm_parameter="okay"
             )
-        ]
-        await inline_query.answer(no_results, cache_time=1)
-        return   
+        return           
 
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
