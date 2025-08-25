@@ -551,10 +551,6 @@ async def inline_query_handler(client, inline_query):
     user_id = inline_query.from_user.id
     results = []
 
-    # Early return for empty query
-    if not query:
-        return
-
     if not is_user_authorized(user_id):
         await inline_query.answer(
             results=[],
@@ -563,13 +559,23 @@ async def inline_query_handler(client, inline_query):
             switch_pm_parameter="unlock"
             )
         return
-    
+
     if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
         await inline_query.answer(
             results=[],
             cache_time=0,
             switch_pm_text="⚠️Your Limit Reached. Try again later.",
             switch_pm_parameter="limit"
+        )
+        return
+    
+    # Early return for empty query
+    if not query:
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Enter Valid Movie/Series Click here to know more.",
+            switch_pm_parameter="help"
         )
         return
     
@@ -611,7 +617,7 @@ async def inline_query_handler(client, inline_query):
         results,
         cache_time=0,
         next_offset=next_offset,
-        switch_pm_text=f"Result for {query}" if results else "No results found. Click here to know more.",
+        switch_pm_text=f"Result for {query}" if results else "Enter Valid Movie/Series Click here to know more.",
         switch_pm_parameter="start" if results else "help"
     )
         
