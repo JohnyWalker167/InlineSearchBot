@@ -496,16 +496,20 @@ async def inline_query_handler(client, inline_query):
     user_id = inline_query.from_user.id
     results = []
 
-    # Show a friendly prompt if no query is entered
     if not query:
         prompt_article = InlineQueryResultArticle(
             title="🔎 Start typing to search files...",
             description="Enter keywords to search available files.",
             input_message_content=InputTextMessageContent(
-                message_text="/start"
+                "ℹ️ Please enter a search query above to find files."
             )
         )
-        await inline_query.answer([prompt_article], cache_time=1)
+        await inline_query.answer(
+            results=[prompt_article],
+            cache_time=1,
+            switch_pm_text="Open bot for more options",
+            switch_pm_parameter="start"
+        )
         return
             
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
