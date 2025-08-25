@@ -599,10 +599,10 @@ async def chosen_result_handler(client, chosen_result):
     user_id = chosen_result.from_user.id
     user_link = await get_user_link(chosen_result.from_user)
 
-    # Only increment if chosen result is a document or video
-    if chosen_result.result_type in ("document", "video"):
-        user_file_count[user_id] += 1
-        logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
+    # Increment counter only when a result is chosen
+    user_file_count[user_id] += 1
+
+    logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
     return
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
