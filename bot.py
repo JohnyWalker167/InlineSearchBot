@@ -502,7 +502,7 @@ async def inline_query_handler(client, inline_query):
             title="🔎 Start typing to search files...",
             description="Enter keywords to search available files.",
             input_message_content=InputTextMessageContent(
-                message_text="ℹ️ Please enter a search query above to find files."
+                message_text="/start"
             )
         )
         await inline_query.answer([prompt_article], cache_time=1)
@@ -550,7 +550,7 @@ async def inline_query_handler(client, inline_query):
                     title="⚠️ Limit Reached",
                     description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
                     input_message_content=InputTextMessageContent(
-                        message_text=f"⚠️ You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Please take a short break and try again later."
+                        message_text=f"/start"
                     )
                 )
             ]
