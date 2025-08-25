@@ -337,6 +337,7 @@ def extract_file_info(message, channel_id=None):
     file_info = {
         "channel_id": channel_id if channel_id is not None else message.chat.id,
         "file_id": None,
+        "message_id": message.id,
         "file_name": None,
         "file_size": None,
         "file_format": None,
