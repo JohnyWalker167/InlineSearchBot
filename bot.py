@@ -156,7 +156,7 @@ async def start_handler(client, message):
                 message.reply_text(welcome_text,
                 reply_markup=InlineKeyboardMarkup(
                     [
-                    [InlineKeyboardButton("Updates Channel", url=f"{UPDATE_CHANNEL_LINK}")]
+                    [InlineKeyboardButton("🕵️ Search", switch_inline_query_current_chat="")],
                     ]
                 ),
                 parse_mode=enums.ParseMode.HTML
