@@ -553,12 +553,6 @@ async def inline_query_handler(client, inline_query):
 
     # Early return for empty query
     if not query:
-        await inline_query.answer(
-            results=[],
-            cache_time=0,
-            switch_pm_text="Enter Valid Movie/Series name to search",
-            switch_pm_parameter="help"
-        )
         return
 
     if not is_user_authorized(user_id):
@@ -617,7 +611,7 @@ async def inline_query_handler(client, inline_query):
         results,
         cache_time=0,
         next_offset=next_offset,
-        switch_pm_text=f"Result for {query}" if results else "Enter Valid Movie/Series name to search",
+        switch_pm_text=f"Result for {query}" if results else "No results found. Click here to know more.",
         switch_pm_parameter="start" if results else "help"
     )
         
