@@ -569,6 +569,9 @@ async def inline_query_handler(client, inline_query):
                 )
             )
 
+        await inline_query.answer(results, cache_time=1)
+        return
+
     if not results:
         no_results = [
             InlineQueryResultArticle(
@@ -580,8 +583,7 @@ async def inline_query_handler(client, inline_query):
             )
         ]
         await inline_query.answer(no_results, cache_time=1)
-        return    
-    await inline_query.answer(results, cache_time=1)
+        return   
 
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
