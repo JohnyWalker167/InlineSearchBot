@@ -550,45 +550,50 @@ async def inline_query_handler(client, inline_query):
         )
         return
 
-    if query:
-        channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
-        channel_ids = [c["channel_id"] for c in channels]
+    # Pagination: get offset from inline_query
+    try:
+        offset = int(inline_query.offset) if inline_query.offset else 0
+    except Exception:
+        offset = 0
 
-        pipeline = build_search_pipeline(query, channel_ids, 0, SEARCH_PAGE_SIZE)
-        result = list(files_col.aggregate(pipeline))
-        files = result[0]["results"] if result and result[0]["results"] else []
+    channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
+    channel_ids = [c["channel_id"] for c in channels]
 
-        if files:                                    
-            for f in files:
-                file_name = f.get("file_name", "File")
-                file_size = human_readable_size(f.get("file_size", 0))
-                file_id = f.get("file_id")  # You must store this when indexing!
-                # Button with search query
-                buttons = []
-                buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
-
-                results.append(
-                    InlineQueryResultCachedDocument(
-                        title=f"{file_name}",
-                        document_file_id=file_id,
-                        description=f"Size: {file_size}",
-                        caption=f"<b>{file_name}</b>",
-                        parse_mode=enums.ParseMode.HTML,
-                        reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
-                    )
+    pipeline = build_search_pipeline(query, channel_ids, offset, SEARCH_PAGE_SIZE)  
+    result = list(files_col.aggregate(pipeline))
+    files = result[0]["results"] if result and result[0]["results"] else []
+    total_count = result[0]["totalCount"][0]["total"] if result and result[0]["totalCount"] else 0
+    
+    if files:
+        for f in files:
+            file_name = f.get("file_name", "File")
+            file_size = human_readable_size(f.get("file_size", 0))
+            file_id = f.get("file_id")
+            buttons = [
+                [InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)]
+            ]
+            results.append(
+                InlineQueryResultCachedDocument(
+                    title=f"{file_name}",
+                    document_file_id=file_id,
+                    description=f"Size: {file_size}",
+                    caption=f"<b>{file_name}</b>",
+                    parse_mode=enums.ParseMode.HTML,
+                    reply_markup=InlineKeyboardMarkup(buttons)
                 )
-
-            await inline_query.answer(results, cache_time=0)
-            return
-
-        if not files:
-            await inline_query.answer(
-                results=[],
-                cache_time=0,
-                switch_pm_text="No results found. click here for help.",
-                switch_pm_parameter="help"
             )
-            return
+
+    # Set next_offset if more results are available
+    next_offset = str(offset + SEARCH_PAGE_SIZE) if (offset + SEARCH_PAGE_SIZE) < total_count else ""
+    
+    await inline_query.answer(
+        results,
+        cache_time=0,
+        next_offset=next_offset,
+        switch_pm_text=f"Result for {query}" if results else "No results found. click here for help.",
+        switch_pm_parameter="start" if results else "help"
+    )
+
         
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
