@@ -140,9 +140,28 @@ async def start_handler(client, message):
             if is_user_authorized(user_id):
                 reply_msg = await safe_api_call(
                     message.reply_text(
-                        f"🔎 Hello {user_link}!\n\n"
-                        f"Double-check your spelling or try searching the title on <a href='https://www.google.com'>Google</a>"
-                        f"❓ What's available? Check <a href='{UPDATE_CHANNEL_LINK}'>here</a>.</b>"
+                    f"𝐇𝖾𝗒 {user_link} ✨ \n\n"
+                    "𝐈. 𝐇ⱺω 𝗍ⱺ 𝐒𝖾α𝗋𝖼ɦ 𝐅ⱺ𝗋 𝐌𝐎𝐕𝐈𝐄𝐒: \n\n"
+                    "1. 𝐌ⱺ𝗏𝗂𝖾 𝐍αꭑ𝖾 + 𝐘𝖾α𝗋\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  Man of Steel 2013\n"
+                    "(𝐌α𝗄𝖾 𝗌υ𝗋𝖾 𝗍ⱺ 𝐂ɦ𝖾𝖼𝗄 𝗍ɦ𝖾 𝐒ρ𝖾ᥣᥣ𝗂𐓣𝗀 α𐓣ᑯ 𝐘𝖾α𝗋 ⱺ𐓣 𝐆ⱺⱺ𝗀ᥣ𝖾)\n"
+                    "2. 𝐅ⱺ𝗋 𝐐υαᥣ𝗂𝗍𝗒 (1080ρ) 𝐅𝗂ᥣ𝖾𝗌:\n"
+                    "𝐀ᑯᑯ \"1080ρ\" α𝖿𝗍𝖾𝗋 𝗍ɦ𝖾 𝐌ⱺ𝗏𝗂𝖾 𝐍αꭑ𝖾 α𐓣ᑯ 𝐘𝖾α𝗋.\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  Man of Steel 2013 1080p\n\n"
+                    "𝐈𝐈. 𝐇ⱺω 𝗍ⱺ 𝐒𝖾α𝗋𝖼ɦ 𝐅ⱺ𝗋 𝐓𝐕-𝐒𝐄𝐑𝐈𝐄𝐒:\n\n"
+                    "1. 𝐒𝖾𝗋𝗂𝖾𝗌 𝐍αꭑ𝖾 + 𝐒𝖾α𝗌ⱺ𐓣 𝐍υꭑᑲ𝖾𝗋\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  WandaVision S01\n"
+                    "(𝐓ɦ𝗂𝗌 ω𝗂ᥣᥣ 𝐒ɦⱺω 𝐑𝖾𝗌υᥣ𝗍𝗌 𝖿ⱺ𝗋 𝐒𝖾α𝗌ⱺ𐓣 1)\n"
+                    "2. 𝐅ⱺ𝗋 𝐒ρ𝖾𝖼𝗂𝖿𝗂𝖼 𝐄ρ𝗂𝗌ⱺᑯ𝖾𝗌:\n"
+                    "𝐀ᑯᑯ \"𝐄\" 𝐅ⱺᥣᥣⱺω𝖾ᑯ ᑲ𝗒 𝗍ɦ𝖾 𝐄ρ𝗂𝗌ⱺᑯ𝖾 𝐍υꭑᑲ𝖾𝗋.\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  WandaVision S02E01\n"
+                    "(𝐓ɦ𝗂𝗌 𝗂𝗌 𝖿ⱺ𝗋 𝐒𝖾α𝗌ⱺ𐓣 2, 𝐄ρ𝗂𝗌ⱺᑯ𝖾 1)\n"
+                    "3. 𝐅ⱺ𝗋 𝐐υαᥣ𝗂𝗍𝗒 (1080ρ) 𝐅𝗂ᥣ𝖾𝗌:\n"
+                    "𝐀ᑯᑯ \"1080ρ\" 𝖿ⱺ𝗋 𝐇𝗂𝗀ɦ-𝐐υαᥣ𝗂𝗍𝗒 𝐅𝗂ᥣ𝖾𝗌.\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  WandaVision S01 1080p\n"
+                    "(𝐌α𝗄𝖾 𝐒υ𝗋𝖾 𝗍ⱺ 𝐂ɦ𝖾𝖼𝗄 𝗍ɦ𝖾 𝐒ρ𝖾ᥣᥣ𝗂𐓣𝗀 α𐓣ᑯ 𝐘𝖾α𝗋 ⱺ𐓣 𝐆ⱺⱺ𝗀ᥣ𝖾)\n\n"
+                    "🎥  𝐑𝖾𝖼ⱺꭑꭑ𝖾𐓣ᑯ𝖾ᑯ 𝐕𝗂ᑯ𝖾ⱺ 𝐏ᥣα𝗒𝖾𝗋𝗌:\n"
+                    "𝐅ⱺ𝗋 𝗍ɦ𝖾 ᑲ𝖾𝗌𝗍 ρᥣα𝗒ᑲα𝖼𝗄 𝖾𝗑ρ𝖾𝗋𝗂𝖾𐓣𝖼𝖾, υ𝗌𝖾: 𝐕𝐋𝐂 𝐌𝖾ᑯ𝗂α 𝐏ᥣα𝗒𝖾𝗋, 𝐌𝐏𝐕 𝐏ᥣα𝗒𝖾𝗋, 𝐌𝐗 𝐏ᥣα𝗒𝖾𝗋 𝐏𝗋ⱺ... \n\n"
                     )
                 )
 
@@ -537,7 +556,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Type to search files...",
+            switch_pm_text="Enter Valid Movie/Series name to search",
             switch_pm_parameter="help"
         )
         return
@@ -598,7 +617,7 @@ async def inline_query_handler(client, inline_query):
         results,
         cache_time=0,
         next_offset=next_offset,
-        switch_pm_text=f"Result for {query}" if results else "No results found. click here for help.",
+        switch_pm_text=f"Result for {query}" if results else "Enter Valid Movie/Series name to search",
         switch_pm_parameter="start" if results else "help"
     )
         
