@@ -101,7 +101,7 @@ async def start_handler(client, message):
                 reply_msg = await safe_api_call(message.reply_text("❌ Invalid or expired token. Please get a new link."))
 
         #-- Get Unlock link ---
-        elif len(message.command) == 1 and message.command[0].startswith("unlock"):
+        elif len(message.command) == 2 and message.command[1].startswith("unlock"):
             if not is_user_authorized(user_id):
                 now = datetime.now(timezone.utc)
                 token_doc = tokens_col.find_one({
@@ -121,6 +121,17 @@ async def start_handler(client, message):
                                 [InlineKeyboardButton("🔓 Get Unlock Link", url=short_link)]
                             ]
                         )
+                    )
+                )
+
+        #-- Get Limit Info ---
+        elif len(message.command) == 2 and message.command[1].startswith("limit"):
+            if is_user_authorized(user_id):
+                reply_msg = await safe_api_call(
+                    message.reply_text(
+                        f"✅ Hello {user_link}!\n\n"
+                        f"You are authorized to access files for the next 24 hours.\n\n"
+                        f"However, you have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later."
                     )
                 )
 
@@ -510,6 +521,15 @@ async def inline_query_handler(client, inline_query):
     user_id = inline_query.from_user.id
     results = []
 
+    if not is_user_authorized(user_id):
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Get your unlock link to access files.",
+            switch_pm_parameter="unlock"
+            )
+        return
+
     if not query:
         await inline_query.answer(
             results=[],
@@ -526,27 +546,14 @@ async def inline_query_handler(client, inline_query):
     result = list(files_col.aggregate(pipeline))
     files = result[0]["results"] if result and result[0]["results"] else []
 
-    if files:
-        if not is_user_authorized(user_id):
+    if files:        
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
             await inline_query.answer(
                 results=[],
                 cache_time=0,
-                switch_pm_text="Get your unlock link to access files.",
-                switch_pm_parameter="unlock"
-                )
-            return
-        
-        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
-            max_results = [
-                InlineQueryResultArticle(
-                    title="⚠️ Limit Reached",
-                    description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
-                    input_message_content=InputTextMessageContent(
-                        message_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later."
-                    )
-                )
-            ]
-            await inline_query.answer(max_results, cache_time=0)
+                switch_pm_text="⚠️Your Limit Reached. Try again later.",
+                switch_pm_parameter="limit"
+            )
             return
                         
         for f in files:
