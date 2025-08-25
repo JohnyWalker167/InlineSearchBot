@@ -499,7 +499,7 @@ async def inline_query_handler(client, inline_query):
     if not query:
         await inline_query.answer(
             results=[],
-            cache_time=1,
+            cache_time=0,
             switch_pm_text="Open bot for more options",
             switch_pm_parameter="start"
         )
@@ -508,7 +508,7 @@ async def inline_query_handler(client, inline_query):
     if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
         await inline_query.answer(
             results=[],
-            cache_time=1,
+            cache_time=0,
             switch_pm_text=f"Your limit reached. Try again later.",
             switch_pm_parameter="okay"
             )
@@ -562,8 +562,8 @@ async def inline_query_handler(client, inline_query):
                 InlineQueryResultCachedDocument(
                     title=f"{file_name}",
                     document_file_id=file_id,
-                    description=f"Size: {file_size})",
-                    caption=f"{file_name}",
+                    description=f"Size: {file_size}",
+                    caption=f"<b>{file_name}</b>",
                     parse_mode=enums.ParseMode.HTML,
                     reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
                 )
