@@ -506,12 +506,16 @@ async def inline_query_handler(client, inline_query):
         return
     
     if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
-        await inline_query.answer(
-            results=[],
-            cache_time=0,
-            switch_pm_text=f"Your limit reached. Try again later.",
-            switch_pm_parameter="okay"
+        max_results = [
+            InlineQueryResultArticle(
+                title="⚠️ Limit Reached",
+                description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
+                input_message_content=InputTextMessageContent(
+                    message_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later."
+                )
             )
+        ]
+        await inline_query.answer(max_results, cache_time=1)
         return
             
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
@@ -573,12 +577,16 @@ async def inline_query_handler(client, inline_query):
         return
 
     if not results:
-        await inline_query.answer(
-            results=[],
-            cache_time=0,
-            switch_pm_text=f"❌ No Results Found",
-            switch_pm_parameter="okay"
+        no_results = [
+            InlineQueryResultArticle(
+                title="❌ No Results Found",
+                description=f'Nothing found for "{query}". Try another search.',
+                input_message_content=InputTextMessageContent(
+                    message_text=f'❌ No results found for "{query}".'
+                )
             )
+        ]
+        await inline_query.answer(no_results, cache_time=1)
         return           
 
 @bot.on_message(filters.via_bot)
@@ -591,10 +599,10 @@ async def chosen_result_handler(client, chosen_result):
     user_id = chosen_result.from_user.id
     user_link = await get_user_link(chosen_result.from_user)
 
-    # Increment counter only when a result is chosen
-    user_file_count[user_id] += 1
-
-    logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
+    # Only increment if chosen result is a document or video
+    if chosen_result.result_type in ("document", "video"):
+        user_file_count[user_id] += 1
+        logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
     return
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
