@@ -504,6 +504,15 @@ async def inline_query_handler(client, inline_query):
             switch_pm_parameter="start"
         )
         return
+    
+    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
+        await inline_query.answer(
+            results=[],
+            cache_time=1,
+            switch_pm_text=f"Your limit reached. Try again later.",
+            switch_pm_parameter="okay"
+            )
+        return
             
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
@@ -540,16 +549,7 @@ async def inline_query_handler(client, inline_query):
             )
             await inline_query.answer([auth_article], cache_time=1)
             return
-        
-        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
-            await inline_query.answer(
-                results=[],
-                cache_time=1,
-                switch_pm_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
-                switch_pm_parameter="okay"
-                )
-            return
-                
+                        
         for f in files:
             file_name = f.get("file_name", "File")
             file_size = human_readable_size(f.get("file_size", 0))
