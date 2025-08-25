@@ -135,6 +135,18 @@ async def start_handler(client, message):
                     )
                 )
 
+        # --- Get Search info ---
+        elif len(message.command) == 2 and message.command[1].startswith("q_"):
+            if is_user_authorized(user_id):
+                query = message.command[1][2:]
+                reply_msg = await safe_api_call(
+                    message.reply_text(
+                        f"🔎 Hello {user_link}!\n\n"
+                        f"Double-check your spelling or try searching the title on <a href='https://www.google.com/search?q={query}'>Google</a>"
+                        f"❓ What's available? Check <a href='{UPDATE_CHANNEL_LINK}'>here</a>.</b>"
+                    )
+                )
+
         # --- Default greeting ---
         else:
             welcome_text = (
@@ -529,64 +541,56 @@ async def inline_query_handler(client, inline_query):
             switch_pm_parameter="unlock"
             )
         return
-
-    if not query:
+    
+    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Enter a valid Movie/Series name to search.",
-            switch_pm_parameter="start"
+            switch_pm_text="⚠️Your Limit Reached. Try again later.",
+            switch_pm_parameter="limit"
         )
         return
-                
-    channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
-    channel_ids = [c["channel_id"] for c in channels]
 
-    pipeline = build_search_pipeline(query, channel_ids, 0, SEARCH_PAGE_SIZE)
-    result = list(files_col.aggregate(pipeline))
-    files = result[0]["results"] if result and result[0]["results"] else []
+    if query:
+        channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
+        channel_ids = [c["channel_id"] for c in channels]
 
-    if files:        
-        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
+        pipeline = build_search_pipeline(query, channel_ids, 0, SEARCH_PAGE_SIZE)
+        result = list(files_col.aggregate(pipeline))
+        files = result[0]["results"] if result and result[0]["results"] else []
+
+        if files:                                    
+            for f in files:
+                file_name = f.get("file_name", "File")
+                file_size = human_readable_size(f.get("file_size", 0))
+                file_id = f.get("file_id")  # You must store this when indexing!
+                # Button with search query
+                buttons = []
+                buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
+
+                results.append(
+                    InlineQueryResultCachedDocument(
+                        title=f"{file_name}",
+                        document_file_id=file_id,
+                        description=f"Size: {file_size}",
+                        caption=f"<b>{file_name}</b>",
+                        parse_mode=enums.ParseMode.HTML,
+                        reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
+                    )
+                )
+
+            await inline_query.answer(results, cache_time=0)
+            return
+
+        if not files:
             await inline_query.answer(
                 results=[],
                 cache_time=0,
-                switch_pm_text="⚠️Your Limit Reached. Try again later.",
-                switch_pm_parameter="limit"
+                switch_pm_text="No results found. Try another search.",
+                switch_pm_parameter=f"q_{query}"
             )
             return
-                        
-        for f in files:
-            file_name = f.get("file_name", "File")
-            file_size = human_readable_size(f.get("file_size", 0))
-            file_id = f.get("file_id")  # You must store this when indexing!
-            # Button with search query
-            buttons = []
-            buttons.append([InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)])
-
-            results.append(
-                InlineQueryResultCachedDocument(
-                    title=f"{file_name}",
-                    document_file_id=file_id,
-                    description=f"Size: {file_size}",
-                    caption=f"<b>{file_name}</b>",
-                    parse_mode=enums.ParseMode.HTML,
-                    reply_markup=InlineKeyboardMarkup(buttons) if buttons else None
-                )
-            )
-
-        await inline_query.answer(results, cache_time=0)
-        return
-
-    if not results:
-        await inline_query.answer(
-            results=[],
-            cache_time=0,
-            switch_pm_text="Enter a valid Movie/Series name to search.",
-            switch_pm_parameter="start"
-        )
-        return           
-
+        
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
         bot.loop.create_task(delete_after_delay(message))
