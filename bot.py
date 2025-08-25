@@ -500,24 +500,11 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Open bot for more options",
+            switch_pm_text="Enter a valid Movie/Series name to search.",
             switch_pm_parameter="start"
         )
         return
-    
-    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
-        max_results = [
-            InlineQueryResultArticle(
-                title="⚠️ Limit Reached",
-                description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
-                input_message_content=InputTextMessageContent(
-                    message_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later."
-                )
-            )
-        ]
-        await inline_query.answer(max_results, cache_time=1)
-        return
-            
+                
     channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
     channel_ids = [c["channel_id"] for c in channels]
 
@@ -553,6 +540,19 @@ async def inline_query_handler(client, inline_query):
             )
             await inline_query.answer([auth_article], cache_time=0)
             return
+        
+        if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
+            max_results = [
+                InlineQueryResultArticle(
+                    title="⚠️ Limit Reached",
+                    description=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later.",
+                    input_message_content=InputTextMessageContent(
+                        message_text=f"You have reached the maximum of {MAX_FILES_PER_SESSION} files per session. Try again later."
+                    )
+                )
+            ]
+            await inline_query.answer(max_results, cache_time=0)
+            return
                         
         for f in files:
             file_name = f.get("file_name", "File")
@@ -573,20 +573,16 @@ async def inline_query_handler(client, inline_query):
                 )
             )
 
-        await inline_query.answer(results, cache_time=300)
+        await inline_query.answer(results, cache_time=0)
         return
 
     if not results:
-        no_results = [
-            InlineQueryResultArticle(
-                title="❌ No Results Found",
-                description=f'Nothing found for "{query}". Try another search.',
-                input_message_content=InputTextMessageContent(
-                    message_text=f'❌ No results found for "{query}".'
-                )
-            )
-        ]
-        await inline_query.answer(no_results, cache_time=1)
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Enter a valid Movie/Series name to search.",
+            switch_pm_parameter="start"
+        )
         return           
 
 @bot.on_message(filters.via_bot)
