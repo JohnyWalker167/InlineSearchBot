@@ -647,7 +647,6 @@ async def main():
     """
     # Set bot commands
     await bot.start()
-    await bot.set_bot_commands([])
 
     bot.loop.create_task(start_fastapi())
     bot.loop.create_task(file_queue_worker(bot))  # Start the queue worker
