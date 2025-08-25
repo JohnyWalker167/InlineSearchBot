@@ -41,7 +41,7 @@ import logging
 # ========================= 
 
 TOKEN_VALIDITY_SECONDS = 24 * 60 * 60  # 24 hours token validity
-MAX_FILES_PER_SESSION = 5            # Max files a user can access per session
+MAX_FILES_PER_SESSION = 10           # Max files a user can access per session
 PAGE_SIZE = 10  # Number of files per page
 SEARCH_PAGE_SIZE = 10  # You can adjust this
 
@@ -536,7 +536,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Get your unlock link to access files.",
+            switch_pm_text="Click here to get your unlock link.",
             switch_pm_parameter="unlock"
             )
         return
