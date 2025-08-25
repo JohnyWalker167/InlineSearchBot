@@ -603,14 +603,34 @@ async def inline_query_handler(client, inline_query):
     # Set next_offset if more results are available
     next_offset = str(offset + SEARCH_PAGE_SIZE) if (offset + SEARCH_PAGE_SIZE) < total_count else ""
 
-    await inline_query.answer(
-        results,
-        cache_time=0,
-        next_offset=next_offset,
-        switch_pm_text=f"Result for {query}" if results and query else "Enter Valid Movie/Series Click here to know more.",
-        switch_pm_parameter="start" if results else "help"
-    )
-    return
+    if results:
+        await inline_query.answer(
+            results,
+            cache_time=0,
+            next_offset=next_offset,
+            switch_pm_text=f"Result for {query}",
+            switch_pm_parameter="start"
+        )
+        return
+
+    if not results:
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Enter Valid Movie/Series Click here to know more.",
+            switch_pm_parameter="help"
+
+        )
+        return
+    
+    if not query:
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Enter Valid Movie/Series Click here to know more.",
+            switch_pm_parameter="help"
+        )
+        return
         
 @bot.on_message(filters.via_bot)
 async def private_file_handler(client, message: Message):
