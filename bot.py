@@ -63,10 +63,6 @@ copy_lock = asyncio.Lock()
 if "file_name_text" not in [idx["name"] for idx in files_col.list_indexes()]:
     files_col.create_index([("file_name", "text")])
 
-def encode_file_link(channel_id, message_id):
-    # Returns a base64 string for deep linking
-    raw = f"{channel_id}_{message_id}".encode()
-    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 def sanitize_query(query):
     """Sanitizes and normalizes a search query for consistent matching of 'and' and '&'."""
@@ -77,10 +73,6 @@ def sanitize_query(query):
     query = re.sub(r"[:',]", "", query)
     query = re.sub(r"[.\s_\-\(\)\[\]]+", " ", query).strip()
     return query
-
-def contains_url(text):
-    url_pattern = r'https?://\S+|www\.\S+'
-    return re.search(url_pattern, text) is not None
 
 # =========================
 # Bot Command Handlers
@@ -114,7 +106,7 @@ async def start_handler(client, message):
         else:
             welcome_text = (
                             f"👋 <b>Welcome, {user_link}!</b>\n\n"
-                            f"I'm a Auto Filter Bot 🤖."
+                            f"I'm a Media Search 🤖."
                             )
             reply_msg = await safe_api_call(
                 message.reply_text(welcome_text,
@@ -593,12 +585,9 @@ async def private_file_handler(client, message: Message):
 @bot.on_chosen_inline_result()
 async def chosen_result_handler(client, chosen_result):
     user_id = chosen_result.from_user.id
-    user_link = await get_user_link(chosen_result.from_user)
 
     # Increment counter only when a result is chosen
     user_file_count[user_id] += 1
-
-    logger.info(f"User {user_link} has now got {user_file_count[user_id]} files.")
     return
 
 @bot.on_message(filters.command("chatop") & filters.private & filters.user(OWNER_ID))
