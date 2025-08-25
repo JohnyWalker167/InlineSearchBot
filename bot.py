@@ -136,13 +136,12 @@ async def start_handler(client, message):
                 )
 
         # --- Get Search info ---
-        elif len(message.command) == 2 and message.command[1].startswith("q_"):
+        elif len(message.command) == 2 and message.command[1].startswith("help"):
             if is_user_authorized(user_id):
-                query = message.command[1][2:]
                 reply_msg = await safe_api_call(
                     message.reply_text(
                         f"🔎 Hello {user_link}!\n\n"
-                        f"Double-check your spelling or try searching the title on <a href='https://www.google.com/search?q={query}'>Google</a>"
+                        f"Double-check your spelling or try searching the title on <a href='https://www.google.com'>Google</a>"
                         f"❓ What's available? Check <a href='{UPDATE_CHANNEL_LINK}'>here</a>.</b>"
                     )
                 )
@@ -586,8 +585,8 @@ async def inline_query_handler(client, inline_query):
             await inline_query.answer(
                 results=[],
                 cache_time=0,
-                switch_pm_text="No results found. Try another search.",
-                switch_pm_parameter=f"q_{query}"
+                switch_pm_text="No results found. click here for help.",
+                switch_pm_parameter="help"
             )
             return
         
