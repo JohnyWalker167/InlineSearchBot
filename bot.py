@@ -2,7 +2,6 @@
 # Imports
 # =========================
 import asyncio
-import base64
 from bson import ObjectId
 import os
 import re
@@ -37,7 +36,6 @@ from db import (db, users_col,
 from fast_api import api
 from tmdb import get_by_id
 import logging
-import base64
 # =========================
 # Constants & Globals
 # ========================= 
@@ -101,6 +99,30 @@ async def start_handler(client, message):
                 await safe_api_call(bot.send_message(LOG_CHANNEL_ID, f"✅ User <b>{user_link}</b> authorized via token."))
             else:
                 reply_msg = await safe_api_call(message.reply_text("❌ Invalid or expired token. Please get a new link."))
+
+        #-- Get Unlock link ---
+        elif len(message.command) == 1 and message.command[0].startswith("unlock"):
+            if not is_user_authorized(user_id):
+                now = datetime.now(timezone.utc)
+                token_doc = tokens_col.find_one({
+                    "user_id": user_id,
+                    "expiry": {"$gt": now}
+                })
+                token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
+                short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
+                reply_msg = await safe_api_call(
+                    message.reply_text(
+                        f"🔓 Hello {user_link}!\n\n"
+                        "To access files, please contribute a little by clicking the button below. "
+                        "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
+                        "Click below to get 24-hour access:",
+                        reply_markup=InlineKeyboardMarkup(
+                            [
+                                [InlineKeyboardButton("🔓 Get Unlock Link", url=short_link)]
+                            ]
+                        )
+                    )
+                )
 
         # --- Default greeting ---
         else:
@@ -366,7 +388,7 @@ async def broadcast_handler(client, message: Message):
 
         for user in users:
              try:
-                await asyncio.sleep(1)  # Rate limit
+                await asyncio.sleep(3)  # Rate limit
                 await safe_api_call(message.reply_to_message.copy(user["user_id"]))
                 total += 1
              except Exception:
@@ -506,31 +528,12 @@ async def inline_query_handler(client, inline_query):
 
     if files:
         if not is_user_authorized(user_id):
-            now = datetime.now(timezone.utc)
-            token_doc = tokens_col.find_one({
-                "user_id": user_id,
-                "expiry": {"$gt": now}
-            })
-            token_id = token_doc["token_id"] if token_doc else generate_token(user_id)
-            short_link = shorten_url(get_token_link(token_id, BOT_USERNAME))
-            # Inline result for authorization using url field
-            auth_article = InlineQueryResultArticle(
-                title="🔓 Just one step away!",
-                description="Tap to get your 24-hour access link.",
-                input_message_content=InputTextMessageContent(
-                    "🎉 Just one step away!\n\n"
-                    "To access files, please contribute a little by clicking the button below. "
-                    "It’s completely free for you — and it helps keep the bot running by supporting the server costs. ❤️\n\n"
-                    "Click below to get 24-hour access:"
-                ),
-                url=short_link,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [InlineKeyboardButton("🔓 Get Access Link", url=short_link)]
-                    ]
+            await inline_query.answer(
+                results=[],
+                cache_time=0,
+                switch_pm_text="Get your unlock link to access files.",
+                switch_pm_parameter="unlock"
                 )
-            )
-            await inline_query.answer([auth_article], cache_time=0)
             return
         
         if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
