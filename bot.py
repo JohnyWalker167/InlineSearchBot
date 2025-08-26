@@ -143,15 +143,15 @@ async def start_handler(client, message):
                     f"𝐇𝖾𝗒 {user_link} ✨ \n\n"
                     "𝐈. 𝐇ⱺω 𝗍ⱺ 𝐒𝖾α𝗋𝖼ɦ 𝐅ⱺ𝗋 𝐌𝐎𝐕𝐈𝐄𝐒: \n\n"
                     "1. 𝐌ⱺ𝗏𝗂𝖾 𝐍αꭑ𝖾\n"
-                    "𝐄𝗑αꭑρᥣ𝖾:  Man of Steel\n"
+                    "𝐄𝗑αꭑρᥣ𝖾: movie Man of Steel\n"
                     "(𝐌α𝗄𝖾 𝗌υ𝗋𝖾 𝗍ⱺ 𝐂ɦ𝖾𝖼𝗄 𝗍ɦ𝖾 𝐒ρ𝖾ᥣᥣ𝗂𐓣𝗀 ⱺ𐓣 𝐆ⱺⱺ𝗀ᥣ𝖾)\n"
                     "𝐈𝐈. 𝐇ⱺω 𝗍ⱺ 𝐒𝖾α𝗋𝖼ɦ 𝐅ⱺ𝗋 𝐓𝐕-𝐒𝐄𝐑𝐈𝐄𝐒:\n\n"
-                    "1. 𝐒𝖾𝗋𝗂𝖾𝗌 𝐍αꭑ𝖾 + 𝐒𝖾α𝗌ⱺ𐓣 𝐍υꭑᑲ𝖾𝗋\n"
-                    "𝐄𝗑αꭑρᥣ𝖾:  WandaVision S01\n"
+                    "1. show 𝐍αꭑ𝖾 + 𝐒𝖾α𝗌ⱺ𐓣 𝐍υꭑᑲ𝖾𝗋\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  show WandaVision S01\n"
                     "(𝐓ɦ𝗂𝗌 ω𝗂ᥣᥣ 𝐒ɦⱺω 𝐑𝖾𝗌υᥣ𝗍𝗌 𝖿ⱺ𝗋 𝐒𝖾α𝗌ⱺ𐓣 1 Pack available)\n"
                     "2. 𝐅ⱺ𝗋 𝐒ρ𝖾𝖼𝗂𝖿𝗂𝖼 𝐄ρ𝗂𝗌ⱺᑯ𝖾𝗌:\n"
                     "𝐀ᑯᑯ \"𝐄\" 𝐅ⱺᥣᥣⱺω𝖾ᑯ ᑲ𝗒 𝗍ɦ𝖾 𝐄ρ𝗂𝗌ⱺᑯ𝖾 𝐍υꭑᑲ𝖾𝗋.\n"
-                    "𝐄𝗑αꭑρᥣ𝖾:  WandaVision S02E01\n"
+                    "𝐄𝗑αꭑρᥣ𝖾:  show WandaVision S02E01\n"
                     "(𝐓ɦ𝗂𝗌 𝗂𝗌 𝖿ⱺ𝗋 𝐒𝖾α𝗌ⱺ𐓣 2, 𝐄ρ𝗂𝗌ⱺᑯ𝖾 1)\n"
                     "(𝐌α𝗄𝖾 𝐒υ𝗋𝖾 𝗍ⱺ 𝐂ɦ𝖾𝖼𝗄 𝗍ɦ𝖾 𝐒ρ𝖾ᥣᥣ𝗂𐓣𝗀 ⱺ𐓣 𝐆ⱺⱺ𝗀ᥣ𝖾)\n\n"
                     "🎥  𝐑𝖾𝖼ⱺꭑꭑ𝖾𐓣ᑯ𝖾ᑯ 𝐕𝗂ᑯ𝖾ⱺ 𝐏ᥣα𝗒𝖾𝗋𝗌:\n"
@@ -162,18 +162,23 @@ async def start_handler(client, message):
 
         # --- Default greeting ---
         else:
+            # Build buttons for each allowed channel
+            allowed_channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_name": 1}))
+            buttons = [
+                [InlineKeyboardButton(f"🔎 {c['channel_name']}", switch_inline_query_current_chat=f"{c['channel_name']} ")]
+                for c in allowed_channels if c.get("channel_name")
+            ]
+            if not buttons:
+                buttons = [[InlineKeyboardButton("🕵️ Search", switch_inline_query_current_chat="")]]
             welcome_text = (
-                            f"👋 <b>Welcome, {user_link}!</b>\n\n"
-                            f"I'm a Media Search 🤖."
-                            )
+                f"👋 <b>Welcome, {user_link}!</b>\n\n"
+                f"I'm a Media Search 🤖."
+            )
             reply_msg = await safe_api_call(
-                message.reply_text(welcome_text,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                    [InlineKeyboardButton("🕵️ Search", switch_inline_query_current_chat="")],
-                    ]
-                ),
-                parse_mode=enums.ParseMode.HTML
+                message.reply_text(
+                    welcome_text,
+                    reply_markup=InlineKeyboardMarkup(buttons),
+                    parse_mode=enums.ParseMode.HTML
                 )
             )
     except Exception as e:
@@ -542,7 +547,7 @@ async def tmdb_command(client, message):
 
 @bot.on_inline_query()
 async def inline_query_handler(client, inline_query):
-    query = sanitize_query(inline_query.query)
+    raw_query = inline_query.query.strip()
     user_id = inline_query.from_user.id
     results = []
 
@@ -552,10 +557,10 @@ async def inline_query_handler(client, inline_query):
             cache_time=0,
             switch_pm_text="Click here to get your unlock link.",
             switch_pm_parameter="unlock"
-            )
+        )
         return
 
-    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:           
+    if user_file_count[user_id] >= MAX_FILES_PER_SESSION:
         await inline_query.answer(
             results=[],
             cache_time=0,
@@ -563,8 +568,8 @@ async def inline_query_handler(client, inline_query):
             switch_pm_parameter="limit"
         )
         return
-    
-    if not query:
+
+    if not raw_query:
         await inline_query.answer(
             results=[],
             cache_time=0,
@@ -572,26 +577,54 @@ async def inline_query_handler(client, inline_query):
             switch_pm_parameter="help"
         )
         return
-    
+
     try:
         offset = int(inline_query.offset) if inline_query.offset else 0
     except Exception:
         offset = 0
 
-    # Fetch allowed channels only once per handler call
-    channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1}))
-    channel_ids = [c["channel_id"] for c in channels]
+    # Fetch allowed channels with names
+    channels = list(allowed_channels_col.find({}, {"_id": 0, "channel_id": 1, "channel_name": 1}))
 
-    pipeline = build_search_pipeline(query, channel_ids, offset, SEARCH_PAGE_SIZE)
+    # Try to match the first word as a channel name (partial, case-insensitive)
+    parts = raw_query.split(maxsplit=1)
+    if len(parts) < 2:
+        # If no channel name and query, do not search at all
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text="Type: <movie> <Avengers>",
+            switch_pm_parameter="help"
+        )
+        return
+
+    first_word = parts[0].lower()
+    rest_query = parts[1].strip()
+
+    matched_channels = [
+        c for c in channels if first_word in c.get("channel_name", "").lower()
+    ]
+    if not matched_channels:
+        await inline_query.answer(
+            results=[],
+            cache_time=0,
+            switch_pm_text=f"No channel found matching '{first_word}'.",
+            switch_pm_parameter="help"
+        )
+        return
+
+    channel_ids = [c["channel_id"] for c in matched_channels]
+    search_query = sanitize_query(rest_query)
+
+    pipeline = build_search_pipeline(search_query, channel_ids, offset, SEARCH_PAGE_SIZE)
     result = list(files_col.aggregate(pipeline))
     files = result[0]["results"] if result and result[0]["results"] else []
     total_count = result[0]["totalCount"][0]["total"] if result and result[0]["totalCount"] else 0
 
-    # Pre-create button
     search_button = InlineKeyboardMarkup(
-        [[InlineKeyboardButton(f"🔎 Search: {query}", switch_inline_query_current_chat=query)]]
+        [[InlineKeyboardButton(f"🔎 Search: {search_query}", switch_inline_query_current_chat=raw_query)]]
     )
-    
+
     results = [
         InlineQueryResultCachedDocument(
             title=f.get("file_name", "File"),
@@ -604,14 +637,13 @@ async def inline_query_handler(client, inline_query):
         for f in files
     ]
 
-    # Set next_offset if more results are available
     next_offset = str(offset + SEARCH_PAGE_SIZE) if (offset + SEARCH_PAGE_SIZE) < total_count else ""
 
     await inline_query.answer(
         results,
         cache_time=0,
         next_offset=next_offset,
-        switch_pm_text=f"Result for {query}" if results else "Enter Valid Movie/Series Click here to know more.",
+        switch_pm_text=f"Result for {search_query}" if results else "No results found.",
         switch_pm_parameter="start" if results else "help"
     )
     return
