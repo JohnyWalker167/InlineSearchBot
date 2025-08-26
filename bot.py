@@ -575,7 +575,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Enter Valid Movie/Series Click here to know more.",
+            switch_pm_text="Enter valid query tap here to know more.",
             switch_pm_parameter="help"
         )
         return
@@ -595,7 +595,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Type: movie Avengers",
+            switch_pm_text="Enter valid query tap here to know more.",
             switch_pm_parameter="help"
         )
         return
@@ -645,7 +645,7 @@ async def inline_query_handler(client, inline_query):
         results,
         cache_time=0,
         next_offset=next_offset,
-        switch_pm_text=f"Result for {search_query}" if results else "No results found.",
+        switch_pm_text=f"Result for {search_query}" if results else "Enter valid query tap here to know more.",
         switch_pm_parameter="start" if results else "help"
     )
     return
