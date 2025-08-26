@@ -553,6 +553,8 @@ async def inline_query_handler(client, inline_query):
     user_id = inline_query.from_user.id
     results = []
 
+    await asyncio.sleep(3)
+
     if not is_user_authorized(user_id):
         await inline_query.answer(
             results=[],
