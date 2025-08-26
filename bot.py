@@ -171,8 +171,10 @@ async def start_handler(client, message):
             if not buttons:
                 buttons = [[InlineKeyboardButton("🕵️ Search", switch_inline_query_current_chat="")]]
             welcome_text = (
-                f"👋 <b>Welcome, {user_link}!</b>\n\n"
-                f"I'm a Media Search 🤖."
+                f"👋 <b>🔰 Hello {user_link}! 🔰\n\n"
+                f"Nice to meet you, my dear friend! 🤗\n\n"
+                f"I can help you search media on telegram archives.\n\n"
+                f"❤️ Enjoy your experience here! ❤️\n\n"
             )
             reply_msg = await safe_api_call(
                 message.reply_text(
