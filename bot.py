@@ -595,7 +595,7 @@ async def inline_query_handler(client, inline_query):
         await inline_query.answer(
             results=[],
             cache_time=0,
-            switch_pm_text="Type: <movie> <Avengers>",
+            switch_pm_text="Type: movie Avengers",
             switch_pm_parameter="help"
         )
         return
